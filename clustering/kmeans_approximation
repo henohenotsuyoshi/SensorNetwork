@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import helper.calc_distance
+import clustering.graph as graph
+
+__author__ = 'henohenotsuyoshi'
+
+'''
+授業でやったk-平均方の近似アルゴリズム
+入力:
+    ノードの位置行列 : posNode
+    クラスタの数 : k
+    クラスタヘッドの論理ベクトル,Trueならばクラスタヘッド : cHeadVec
+出力:
+    ノードの位置するクラスタを返すベクトル,それぞれの要素は1~(k-1) : cVec
+'''
+
+def kMeansApproximation(disMat,k,cHeadVec):
+    __calcHeadVec(disMat,k,cHeadVec)
+    clusterVec = __assignCluster(disMat,cHeadVec)
+    return (cHeadVec,clusterVec)
+
+def __assignCluster(_disMat,cHeadVec):
+    cNoHeadSet = [i for i,x in enumerate(cHeadVec) if x == 0]
+    cHeadSet = [i for i,x in enumerate(cHeadVec) if x != 0]
+    disMat = [[_disMat[i][j] for j in cHeadSet] for i in cNoHeadSet]
+    clusterVec = np.zeros(len(cHeadVec))
+    for i in range(0,len(cNoHeadSet)):
+        index = np.argmin(disMat[i])
+        clusterVec[cNoHeadSet[i]] = cHeadVec[cHeadSet[index]]
+    return clusterVec + cHeadVec
+
+
+def __calcHeadVec(_disMat,k,cHeadVec):
+    maxLabel = np.count_nonzero(cHeadVec)
+    if maxLabel<k:
+        cNoHeadSet = [i for i,x in enumerate(cHeadVec) if x == 0]
+        cHeadSet = [i for i,x in enumerate(cHeadVec) if x != 0]
+        disMat = [[_disMat[i][j] for j in cHeadSet] for i in cNoHeadSet]
+        disMaxVec = [np.min(disMat[i]) for i in range(0,len(cNoHeadSet))]
+        cHeadVec[cNoHeadSet[np.argmax(disMaxVec)]] = maxLabel + 1
+        __calcHeadVec(_disMat,k,cHeadVec)
+
+if __name__=="__main__" :
+    nNode = 1000
+    k = 5
+    posMat = np.random.rand(nNode,2)
+    cHeadVec = np.zeros(nNode)
+    cHeadVec[0] = 1
+    disMat = helper.calc_distance.genDistanceMatrix(posMat)
+    print disMat
+    (cHeadVec,clusterVec) = kMeansApproximation(disMat,k,cHeadVec)
+    graph.drawClusteredGraph2D(posMat,cHeadVec,clusterVec)
